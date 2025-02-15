@@ -7,6 +7,7 @@ from django.contrib.auth.decorators import user_passes_test
 from .models import *
 from .forms import *
 from .utils import *
+from .tasks import *
 
 @login_required
 def messageboard_view(request):
@@ -53,13 +54,18 @@ def send_email(message):
         subject = f'New Message from {message.author.profile.name}'
         body = f'{message.author.profile.name}: {message.body}\n\nRegards from\nMy Message Board'
         
+        #Sending email using celery
+        send_email_task.delay(subject, body, subscriber.email)
+        
+        #Sending email as usual
         # Util.send_email(subject, body, subscriber.email)
         
-        email_thread = threading.Thread(target=send_email_thread, args=(subject, body, subscriber))
-        email_thread.start()
+        #Sending email in background using threading
+        # email_thread = threading.Thread(target=send_email_thread, args=(subject, body, subscriber))
+        # email_thread.start()
 
-def send_email_thread(subject, body, subscriber):        
-    Util.send_email(subject, body, subscriber)
+# def send_email_thread(subject, body, subscriber):        
+#     Util.send_email(subject, body, subscriber)
 
 def is_staff(user):
     return user.is_staff
